@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+xml_content = '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="1" systemVersion="11A491" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
     <entity name="Game" representedClassName="Game" syncable="YES">
         <attribute name="awayTeamId" optional="YES" attributeType="UUID"/>
@@ -61,11 +61,4 @@
         <attribute name="id" optional="YES" attributeType="UUID"/>
         <attribute name="isActive" optional="YES" attributeType="Boolean" usesScalarValueType="YES"/>
         <attribute name="level" optional="YES" attributeType="String"/>
-        <attribute name="name" optional="YES" attributeType="String"/>
-        <attribute name="seasonYear" optional="YES" attributeType="Integer 16" defaultValueString="0" usesScalarValueType="YES"/>
-        <attribute name="teamColor" optional="YES" attributeType="String"/>
-        <relationship name="awayGames" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="Game" inverseName="awayTeam" inverseEntity="Game"/>
-        <relationship name="homeGames" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="Game" inverseName="homeTeam" inverseEntity="Game"/>
-        <relationship name="players" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Player" inverseName="team" inverseEntity="Player"/>
-    </entity>
-</model>
+}

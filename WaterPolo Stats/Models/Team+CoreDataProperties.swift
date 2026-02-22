@@ -5,9 +5,20 @@ extension Team {
     @nonobjc public class func fetchRequest() -> NSFetchRequest<Team> {
         return NSFetchRequest<Team>(entityName: "Team")
     }
+
+    /// Fetch active teams sorted by name.
+    @nonobjc public class func fetchActiveTeams() -> NSFetchRequest<Team> {
+        let request = NSFetchRequest<Team>(entityName: "Team")
+        request.predicate = NSPredicate(format: "isActive == YES")
+        request.sortDescriptors = [
+            NSSortDescriptor(keyPath: \Team.clubName, ascending: true),
+            NSSortDescriptor(keyPath: \Team.name, ascending: true)
+        ]
+        return request
+    }
 }
 
-// MARK: Generated accessors for players
+// MARK: - Generated accessors for players
 extension Team {
     @objc(addPlayersObject:)
     @NSManaged public func addToPlayers(_ value: Player)
@@ -22,7 +33,7 @@ extension Team {
     @NSManaged public func removeFromPlayers(_ values: NSSet)
 }
 
-// MARK: Generated accessors for homeGames
+// MARK: - Generated accessors for homeGames
 extension Team {
     @objc(addHomeGamesObject:)
     @NSManaged public func addToHomeGames(_ value: Game)
@@ -37,7 +48,7 @@ extension Team {
     @NSManaged public func removeFromHomeGames(_ values: NSSet)
 }
 
-// MARK: Generated accessors for awayGames
+// MARK: - Generated accessors for awayGames
 extension Team {
     @objc(addAwayGamesObject:)
     @NSManaged public func addToAwayGames(_ value: Game)
