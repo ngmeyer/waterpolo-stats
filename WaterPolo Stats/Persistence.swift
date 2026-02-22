@@ -7,22 +7,34 @@
 
 import CoreData
 
-struct PersistenceController {
+class PersistenceController {
     static let shared = PersistenceController()
 
     @MainActor
     static let preview: PersistenceController = {
         let result = PersistenceController(inMemory: true)
         let viewContext = result.container.viewContext
-        for _ in 0..<10 {
-            let newItem = Item(context: viewContext)
-            newItem.timestamp = Date()
-        }
+        
+        // Create sample teams
+        let homeTeam = Team(context: viewContext)
+        homeTeam.id = UUID()
+        homeTeam.name = "Home Team"
+        
+        let awayTeam = Team(context: viewContext)
+        awayTeam.id = UUID()
+        awayTeam.name = "Away Team"
+        
+        // Create sample game
+        let game = Game(context: viewContext)
+        game.id = UUID()
+        game.date = Date()
+        game.location = "Pool"
+        game.homeTeam = homeTeam
+        game.awayTeam = awayTeam
+        
         do {
             try viewContext.save()
         } catch {
-            // Replace this implementation with code to handle the error appropriately.
-            // fatalError() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
             let nsError = error as NSError
             fatalError("Unresolved error \(nsError), \(nsError.userInfo)")
         }
@@ -32,7 +44,7 @@ struct PersistenceController {
     let container: NSPersistentCloudKitContainer
 
     init(inMemory: Bool = false) {
-        container = NSPersistentCloudKitContainer(name: "WaterPolo_Stats")
+        container = NSPersistentCloudKitContainer(name: "WaterPoloScorekeeper")
         if inMemory {
             container.persistentStoreDescriptions.first!.url = URL(fileURLWithPath: "/dev/null")
         }
@@ -55,3 +67,6 @@ struct PersistenceController {
         container.viewContext.automaticallyMergesChangesFromParent = true
     }
 }
+
+// Alias for compatibility with windsurf-project code
+typealias DataController = PersistenceController
