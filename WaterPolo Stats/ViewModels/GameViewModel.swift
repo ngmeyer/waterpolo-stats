@@ -82,6 +82,11 @@ class GameViewModel: ObservableObject {
         timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
             self?.updateTimers()
         }
+        // Ensure timer runs on main thread (Timer.scheduledTimer does this by default,
+        // but adding to common mode ensures it fires during UI tracking)
+        if let timer = timer {
+            RunLoop.main.add(timer, forMode: .common)
+        }
     }
     
     private func stopTimer() {
@@ -111,7 +116,7 @@ class GameViewModel: ObservableObject {
             if game.shotClock <= 0 {
                 game.shotClock = 0
                 // Handle shot clock violation
-                recordEvent(type: .shot, team: selectedTeam == .home ? .home : .away, 
+                recordEvent(type: .shot, team: selectedTeam == .home ? .home : .away,
                            playerNumber: nil, info: ["type": "shot_clock_violation"])
             }
         }
