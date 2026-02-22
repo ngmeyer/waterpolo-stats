@@ -30,13 +30,20 @@ struct TeamDetailView: View {
             // Player roster
             Section(header: Text("Roster (\(filteredPlayers.count) players)")) {
                 ForEach(filteredPlayers) { player in
-                    PlayerListRow(player: player)
-                        .contentShape(Rectangle())
-                        .onTapGesture {
+                    NavigationLink(destination: PlayerCareerStatsView(player: player)) {
+                        PlayerListRow(player: player)
+                    }
+                    .swipeActions(edge: .trailing) {
+                        Button("Edit") {
                             showEditPlayer = player
                         }
+                        .tint(.blue)
+                        
+                        Button("Delete", role: .destructive) {
+                            deletePlayer(player)
+                        }
+                    }
                 }
-                .onDelete(perform: deletePlayers)
             }
             
             // Quick stats
@@ -107,9 +114,9 @@ struct TeamDetailView: View {
     private var totalSteals: Int { team.playersArray.reduce(0) { $0 + $1.steals } }
     private var totalExclusions: Int { team.playersArray.reduce(0) { $0 + $1.exclusions } }
     
-    private func deletePlayers(offsets: IndexSet) {
+    private func deletePlayer(_ player: Player) {
         withAnimation {
-            offsets.map { filteredPlayers[$0] }.forEach(viewContext.delete)
+            viewContext.delete(player)
             
             do {
                 try viewContext.save()

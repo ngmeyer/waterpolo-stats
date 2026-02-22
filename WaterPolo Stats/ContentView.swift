@@ -68,6 +68,20 @@ struct ContentView: View {
                     Label("Teams", systemImage: "person.3")
                 }
                 .tag(3)
+            
+            // Tab 4: Seasons
+            SeasonListView()
+                .tabItem {
+                    Label("Seasons", systemImage: "calendar")
+                }
+                .tag(4)
+            
+            // Tab 5: Settings
+            SettingsTabView()
+                .tabItem {
+                    Label("Settings", systemImage: "gearshape")
+                }
+                .tag(5)
         }
         .accentColor(.blue)
     }
