@@ -12,8 +12,32 @@ struct ContentView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @State private var selectedTab = 1  // Start on Simple Game tab
     @State private var useSimpleMode = true
+    @State private var showOnboarding = false
+    @State private var onboardingGame: GameSession?
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     
     var body: some View {
+        ZStack {
+            mainContent
+            
+            if showOnboarding {
+                OnboardingView { game in
+                    onboardingGame = game
+                    showOnboarding = false
+                    hasCompletedOnboarding = true
+                    // TODO: Start game with this session
+                }
+                .transition(.move(edge: .bottom))
+            }
+        }
+        .onAppear {
+            if !hasCompletedOnboarding {
+                showOnboarding = true
+            }
+        }
+    }
+    
+    private var mainContent: some View {
         TabView(selection: $selectedTab) {
             // Tab 0: Games List (Historical)
             GameListView()

@@ -17,13 +17,7 @@ struct TeamListView: View {
             List {
                 ForEach(teams) { team in
                     NavigationLink(destination: TeamDetailView(team: team)) {
-                        VStack(alignment: .leading) {
-                            Text(team.wrappedName)
-                                .font(.headline)
-                            Text("\(team.playersArray.count) players")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
+                        TeamListRow(team: team)
                     }
                 }
                 .onDelete(perform: deleteTeams)
@@ -61,22 +55,42 @@ struct TeamListView: View {
     }
 }
 
-struct TeamDetailView: View {
+struct TeamListRow: View {
     let team: Team
-
+    
     var body: some View {
-        VStack {
-            Text(team.wrappedName)
-                .font(.title)
-
-            List {
-                Section(header: Text("Players")) {
-                    ForEach(team.playersArray) { player in
-                        Text(player.wrappedName)
-                    }
-                }
+        HStack {
+            ZStack {
+                Circle()
+                    .fill(Color.blue.opacity(0.15))
+                    .frame(width: 44, height: 44)
+                
+                Image(systemName: "person.3.fill")
+                    .font(.title3)
+                    .foregroundColor(.blue)
             }
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text(team.wrappedName)
+                    .font(.headline)
+                
+                HStack(spacing: 12) {
+                    Label("\(team.playersArray.count)", systemImage: "person.fill")
+                        .font(.caption)
+                    
+                    Label("\(team.allGames.count)", systemImage: "sportscourt.fill")
+                        .font(.caption)
+                }
+                .foregroundColor(.secondary)
+            }
+            
+            Spacer()
+            
+            Image(systemName: "chevron.right")
+                .font(.caption)
+                .foregroundColor(.secondary)
         }
+        .padding(.vertical, 4)
     }
 }
 

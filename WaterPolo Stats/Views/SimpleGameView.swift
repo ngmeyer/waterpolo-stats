@@ -16,6 +16,7 @@ struct SimpleGameView: View {
     @State private var isAdvancedMode = false
     @State private var showTimeoutTeamPicker = false
     @State private var showSettings = false
+    @State private var showExportSheet = false
 
     // Editing
     @State private var editingAction: GameActionRecord?
@@ -97,6 +98,9 @@ struct SimpleGameView: View {
         .sheet(isPresented: $showSettings) {
             SettingsViewStandalone(isSunlightMode: $manualSunlightMode)
                 .environmentObject(viewModel)
+        }
+        .sheet(isPresented: $showExportSheet) {
+            ExportSheetView(game: viewModel.game)
         }
         .onChange(of: viewModel.periodJustEnded) { _, justEnded in
             if justEnded {
@@ -210,7 +214,7 @@ struct SimpleGameView: View {
 
             // Center: clock + settings/camera + timeout row
             VStack(spacing: 6) {
-                // Camera + Clock + Settings
+                // Camera + Clock + Settings + Export
                 HStack(spacing: 8) {
                     Button(action: {
                         if UIImagePickerController.isSourceTypeAvailable(.camera) {
@@ -228,6 +232,11 @@ struct SimpleGameView: View {
                         Image(systemName: "gearshape.fill")
                             .font(.system(size: 18))
                             .foregroundColor(.gray)
+                    }
+                    Button(action: { showExportSheet = true }) {
+                        Image(systemName: "square.and.arrow.up")
+                            .font(.system(size: 18))
+                            .foregroundColor(.blue)
                     }
                 }
 
@@ -652,6 +661,15 @@ struct SimpleGameView: View {
     }
     
     private func recordAction(_ type: GameActionType, team: GameViewModel.TeamType, player: GamePlayer, secondaryPlayer: GamePlayer?, isFiveMeterShot: Bool = false) {
+        // Trigger haptic feedback based on action type
+        switch type {
+        case .goal:
+            HapticsManager.shared.goalScored()
+        case .exclusion, .penalty:
+            HapticsManager.shared.exclusionCalled()
+        default:
+            HapticsManager.shared.buttonPressed()
+        }
         // Record the action for history
         let action = GameActionRecord(
             id: UUID(),

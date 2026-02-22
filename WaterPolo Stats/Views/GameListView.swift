@@ -16,7 +16,7 @@ struct GameListView: View {
         NavigationView {
             List {
                 ForEach(games) { game in
-                    NavigationLink(destination: GameDetailView(game: game)) {
+                    NavigationLink(destination: SavedGameDetailView(game: game)) {
                         GameRow(game: game)
                     }
                 }
@@ -61,31 +61,85 @@ struct GameRow: View {
     let game: Game
     
     var body: some View {
-        VStack(alignment: .leading) {
+        VStack(alignment: .leading, spacing: 4) {
+            // Score row
             HStack {
-                Text(game.homeTeamName)
-                    .font(.headline)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(game.homeTeamName)
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                    
+                    Text(game.awayTeamName)
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                }
+                
                 Spacer()
-                Text("vs")
-                    .foregroundColor(.secondary)
-                Spacer()
-                Text(game.awayTeamName)
-                    .font(.headline)
+                
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text("\(homeScore)")
+                        .font(.title3)
+                        .fontWeight(.bold)
+                        .foregroundColor(.blue)
+                    
+                    Text("\(awayScore)")
+                        .font(.title3)
+                        .fontWeight(.bold)
+                        .foregroundColor(.orange)
+                }
             }
             
-            if let date = game.date {
-                Text(date, style: .date)
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-            }
+            Divider()
             
-            if let location = game.location, !location.isEmpty {
-                Text(location)
+            // Info row
+            HStack {
+                if let date = game.date {
+                    Label(date.formatted(date: .abbreviated, time: .omitted), systemImage: "calendar")
+                }
+                
+                Spacer()
+                
+                // Status badge
+                StatusBadge(status: game.gameStatus)
+            }
+            .font(.caption)
+            .foregroundColor(.secondary)
+            
+            if !game.wrappedLocation.isEmpty {
+                Label(game.wrappedLocation, systemImage: "mappin")
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
         }
         .padding(.vertical, 4)
+    }
+    
+    private var homeScore: Int {
+        game.eventsArray.filter { $0.wrappedEventType == "goal" && isHomePlayer($0.player) }.count
+    }
+    
+    private var awayScore: Int {
+        game.eventsArray.filter { $0.wrappedEventType == "goal" && !isHomePlayer($0.player) }.count
+    }
+    
+    private func isHomePlayer(_ player: Player?) -> Bool {
+        guard let player = player else { return false }
+        return game.rostersArray.first { $0.player?.id == player.id }?.isHomeTeam ?? false
+    }
+}
+
+struct StatusBadge: View {
+    let status: GameStatus
+    
+    var body: some View {
+        Text(status == .completed ? "Final" : "In Progress")
+            .font(.caption2)
+            .fontWeight(.medium)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 2)
+            .background(status == .completed ? Color.green.opacity(0.2) : Color.orange.opacity(0.2))
+            .foregroundColor(status == .completed ? .green : .orange)
+            .cornerRadius(4)
     }
 }
 
