@@ -8,7 +8,6 @@ import PhotosUI
 struct TeamDetailView: View {
     @ObservedObject var team: Team
     @Environment(\.managedObjectContext) private var viewContext
-    @Environment(\.presentationMode) var presentationMode
     
     @State private var showAddPlayer = false
     @State private var showEditPlayer: Player?
@@ -460,7 +459,7 @@ struct GameHistoryRow: View {
 
 struct AddPlayerSheet: View {
     let team: Team
-    @Environment(\.presentationMode) var presentationMode
+    @Environment(\.dismiss) private var dismiss
     @Environment(\.managedObjectContext) private var viewContext
     
     @State private var name = ""
@@ -470,7 +469,7 @@ struct AddPlayerSheet: View {
     @State private var nscaId = ""
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             Form {
                 Section(header: Text("Player Info")) {
                     TextField("Full Name", text: $name)
@@ -481,30 +480,34 @@ struct AddPlayerSheet: View {
 
                 Section(header: Text("Additional Info")) {
                     Toggle("Add Date of Birth", isOn: $showDatePicker)
-                    
+
                     if showDatePicker {
                         DatePicker("Birth Date", selection: Binding(
                             get: { dateOfBirth ?? Date() },
                             set: { dateOfBirth = $0 }
                         ), displayedComponents: .date)
                     }
-                    
+
                     TextField("NCSA ID (optional)", text: $nscaId)
                 }
             }
             .navigationTitle("Add Player")
-            .navigationBarItems(
-                leading: Button("Cancel") {
-                    presentationMode.wrappedValue.dismiss()
-                },
-                trailing: Button("Save") {
-                    savePlayer()
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
                 }
-                .disabled(name.isEmpty || number.isEmpty)
-            )
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        savePlayer()
+                    }
+                    .disabled(name.isEmpty || number.isEmpty)
+                }
+            }
         }
     }
-    
+
     private func savePlayer() {
         let player = Player(context: viewContext)
         player.id = UUID()
@@ -514,10 +517,10 @@ struct AddPlayerSheet: View {
         player.nscaId = nscaId.isEmpty ? nil : nscaId
         player.createdAt = Date()
         player.team = team
-        
+
         do {
             try viewContext.save()
-            presentationMode.wrappedValue.dismiss()
+            dismiss()
         } catch {
             print("Error saving player: \(error)")
         }
@@ -528,7 +531,7 @@ struct AddPlayerSheet: View {
 
 struct EditPlayerSheet: View {
     let player: Player
-    @Environment(\.presentationMode) var presentationMode
+    @Environment(\.dismiss) private var dismiss
     @Environment(\.managedObjectContext) private var viewContext
     
     @State private var name: String
@@ -545,7 +548,7 @@ struct EditPlayerSheet: View {
     }
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             Form {
                 Section(header: Text("Player Info")) {
                     TextField("Full Name", text: $name)
@@ -559,10 +562,10 @@ struct EditPlayerSheet: View {
                         get: { dateOfBirth ?? Date() },
                         set: { dateOfBirth = $0 }
                     ), displayedComponents: .date)
-                    
+
                     TextField("NCSA ID", text: $nscaId)
                 }
-                
+
                 Section {
                     Button("Delete Player", role: .destructive) {
                         deletePlayer()
@@ -570,39 +573,43 @@ struct EditPlayerSheet: View {
                 }
             }
             .navigationTitle("Edit Player")
-            .navigationBarItems(
-                leading: Button("Cancel") {
-                    presentationMode.wrappedValue.dismiss()
-                },
-                trailing: Button("Save") {
-                    savePlayer()
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
                 }
-                .disabled(name.isEmpty || number.isEmpty)
-            )
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        savePlayer()
+                    }
+                    .disabled(name.isEmpty || number.isEmpty)
+                }
+            }
         }
     }
-    
+
     private func savePlayer() {
         player.name = name
         player.number = number
         player.dateOfBirth = dateOfBirth
         player.nscaId = nscaId.isEmpty ? nil : nscaId
         player.updatedAt = Date()
-        
+
         do {
             try viewContext.save()
-            presentationMode.wrappedValue.dismiss()
+            dismiss()
         } catch {
             print("Error saving player: \(error)")
         }
     }
-    
+
     private func deletePlayer() {
         viewContext.delete(player)
-        
+
         do {
             try viewContext.save()
-            presentationMode.wrappedValue.dismiss()
+            dismiss()
         } catch {
             print("Error deleting player: \(error)")
         }
@@ -662,7 +669,7 @@ struct EditTeamSheet: View {
     }
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             Form {
                 Section(header: Text("Team Info")) {
                     TextField(orgFieldLabel, text: $orgName)
@@ -710,10 +717,14 @@ struct EditTeamSheet: View {
                 }
             }
             .navigationTitle("Edit Team")
-            .navigationBarItems(
-                leading: Button("Cancel") { dismiss() },
-                trailing: Button("Save") { saveTeam() }.disabled(orgName.isEmpty)
-            )
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") { saveTeam() }.disabled(orgName.isEmpty)
+                }
+            }
             .confirmationDialog(
                 "Delete \"\(team.displayName)\"?",
                 isPresented: $showDeleteConfirm,
@@ -813,7 +824,7 @@ struct TeamDetailView_Previews: PreviewProvider {
         team.clubName = "680 Club"
         team.level = "16U Boys"
         
-        return NavigationView {
+        return NavigationStack {
             TeamDetailView(team: team)
         }
         .environment(\.managedObjectContext, context)
