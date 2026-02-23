@@ -20,5 +20,5 @@ DerivedData/
 # Swift Package Manager
 .build/
 
-# AI Context (local only, not shared)
-.ai/CLAUDE.md
+# macOS
+.DS_Store
