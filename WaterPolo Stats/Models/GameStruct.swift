@@ -4,7 +4,8 @@ import Foundation
 
 /// Lifecycle state of a persisted game.
 public enum GameStatus: String, Codable {
-    case inProgress = "in_progress"
+    case ready      = "ready"       // configured, clock not yet started
+    case inProgress = "in_progress" // clock running
     case paused     = "paused"
     case completed  = "completed"
 }

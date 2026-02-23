@@ -7,6 +7,7 @@ import CoreData
 struct NewGameSetupView: View {
     @Environment(\.presentationMode) var presentationMode
     @Environment(\.managedObjectContext) private var viewContext
+    @EnvironmentObject var gameViewModel: GameViewModel
     
     @FetchRequest(
         sortDescriptors: [NSSortDescriptor(keyPath: \Team.name, ascending: true)],
@@ -120,9 +121,31 @@ struct NewGameSetupView: View {
     }
     
     private func startGame() {
-        // Create game session and dismiss
-        // TODO: Pass to SimpleGameView
+        guard let home = homeTeam, let away = awayTeam else { return }
+        let session = GameSession(
+            homeTeam: buildGameTeam(from: home, isHome: true),
+            awayTeam: buildGameTeam(from: away, isHome: false)
+        )
+        gameViewModel.loadGame(session)
         presentationMode.wrappedValue.dismiss()
+    }
+
+    /// Converts a Core Data Team into an in-memory GameTeam with its roster.
+    /// Falls back to numbered placeholders (1–7) if the team has no saved players.
+    private func buildGameTeam(from team: Team, isHome: Bool) -> GameTeam {
+        let players: [GamePlayer] = team.playersArray.compactMap { player in
+            guard let capNum = Int(player.wrappedNumber), capNum > 0 else { return nil }
+            return GamePlayer(
+                number: capNum,
+                name: player.wrappedName,
+                isInGame: true,
+                isGoalie: capNum == 1
+            )
+        }
+        let finalPlayers = players.isEmpty
+            ? (1...7).map { n in GamePlayer(number: n, name: "Player \(n)", isInGame: true, isGoalie: n == 1) }
+            : players
+        return GameTeam(id: team.wrappedId, name: team.wrappedName, players: finalPlayers, isHomeTeam: isHome)
     }
 }
 

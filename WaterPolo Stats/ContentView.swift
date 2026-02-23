@@ -10,22 +10,25 @@ import CoreData
 
 struct ContentView: View {
     @Environment(\.managedObjectContext) private var viewContext
-    @State private var selectedTab = 0  // Start on Games List
-    @State private var useSimpleMode = true
+    @StateObject private var gameViewModel = GameViewModel()
+    @State private var selectedTab = 0
     @State private var showOnboarding = false
-    @State private var onboardingGame: GameSession?
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
-    
+
+    private var hasActiveGame: Bool {
+        let s = gameViewModel.game.status
+        return s == .ready || s == .inProgress || s == .paused
+    }
+
     var body: some View {
         ZStack {
             mainContent
-            
+
             if showOnboarding {
                 OnboardingView { game in
-                    onboardingGame = game
                     showOnboarding = false
                     hasCompletedOnboarding = true
-                    // TODO: Start game with this session
+                    gameViewModel.loadGame(game)
                 }
                 .transition(.move(edge: .bottom))
             }
@@ -35,52 +38,48 @@ struct ContentView: View {
                 showOnboarding = true
             }
         }
+        // Auto-navigate when a game is loaded or ends
+        .onChange(of: gameViewModel.game.status) { _, newStatus in
+            switch newStatus {
+            case .ready, .inProgress:
+                selectedTab = 1
+            case .completed:
+                if selectedTab == 1 || selectedTab == 2 { selectedTab = 0 }
+            case .paused:
+                break
+            }
+        }
     }
-    
+
     private var mainContent: some View {
         TabView(selection: $selectedTab) {
-            // Tab 0: Games List (Historical)
             GameListView()
-                .tabItem {
-                    Label("Games", systemImage: "list.bullet")
-                }
+                .environmentObject(gameViewModel)
+                .tabItem { Label("Games", systemImage: "list.bullet") }
                 .tag(0)
-            
-            // Tab 1: Live Scoring (Simple Mode - Default)
-            SimpleGameView()
-                .tabItem {
-                    Label("Score", systemImage: "sportscourt.fill")
-                }
-                .tag(1)
-            
-            // Tab 2: Full Stats Mode
-            NavigationView {
+
+            if hasActiveGame {
+                SimpleGameView()
+                    .environmentObject(gameViewModel)
+                    .tabItem { Label("Score", systemImage: "sportscourt.fill") }
+                    .tag(1)
+
                 GameView()
+                    .environmentObject(gameViewModel)
+                    .tabItem { Label("Full Stats", systemImage: "chart.bar") }
+                    .tag(2)
             }
-            .tabItem {
-                Label("Full Stats", systemImage: "chart.bar")
-            }
-            .tag(2)
-            
-            // Tab 3: Teams
+
             TeamListView()
-                .tabItem {
-                    Label("Teams", systemImage: "person.3")
-                }
+                .tabItem { Label("Teams", systemImage: "person.3") }
                 .tag(3)
-            
-            // Tab 4: Seasons
+
             SeasonListView()
-                .tabItem {
-                    Label("Seasons", systemImage: "calendar")
-                }
+                .tabItem { Label("Seasons", systemImage: "calendar") }
                 .tag(4)
-            
-            // Tab 5: Settings
+
             SettingsTabView()
-                .tabItem {
-                    Label("Settings", systemImage: "gearshape")
-                }
+                .tabItem { Label("Settings", systemImage: "gearshape") }
                 .tag(5)
         }
         .accentColor(.blue)

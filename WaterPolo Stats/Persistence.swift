@@ -5,10 +5,14 @@
 //  Created by Neal Meyer on 10/25/25.
 //
 
+import Combine
 import CoreData
 
-class PersistenceController {
+class PersistenceController: ObservableObject {
     static let shared = PersistenceController()
+
+    /// Becomes true after the persistent stores finish loading.
+    @Published var isReady = false
 
     @MainActor
     static let preview: PersistenceController = {
@@ -50,14 +54,13 @@ class PersistenceController {
         }
         container.loadPersistentStores { [weak self] (_, error) in
             if let error = error as NSError? {
-                // Log error but don't crash in production
                 print("Core Data store error: \(error), \(error.userInfo)")
-                
                 #if DEBUG
                 fatalError("Core Data error (debug): \(error)")
                 #endif
             }
             self?.container.viewContext.automaticallyMergesChangesFromParent = true
+            DispatchQueue.main.async { self?.isReady = true }
         }
     }
 }

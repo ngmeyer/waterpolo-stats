@@ -23,4 +23,20 @@ struct WaterPoloColors {
 extension Color {
     static let waterPoloRed = WaterPoloColors.primary
     static let waterPoloBlue = WaterPoloColors.secondary
+
+    /// Resolves a stored team-color name to a SwiftUI Color.
+    static func teamColor(named name: String?) -> Color {
+        switch name {
+        case "red":    return .red
+        case "green":  return .green
+        case "orange": return .orange
+        case "purple": return .purple
+        case "teal":   return .teal
+        case "pink":   return .pink
+        case "indigo": return .indigo
+        case "yellow": return .yellow
+        case "gray":   return .gray
+        default:       return .blue
+        }
+    }
 }

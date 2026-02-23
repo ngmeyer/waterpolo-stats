@@ -6,7 +6,7 @@ import UIKit
 
 struct SimpleGameView: View {
     @Environment(\.managedObjectContext) private var viewContext
-    @StateObject private var viewModel = GameViewModel()
+    @EnvironmentObject var viewModel: GameViewModel
 
     // UI State
     @State private var showSaveConfirmation = false

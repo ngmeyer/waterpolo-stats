@@ -2,7 +2,7 @@ import SwiftUI
 
 struct GameView: View {
     @Environment(\.managedObjectContext) private var viewContext
-    @StateObject private var viewModel = GameViewModel()
+    @EnvironmentObject var viewModel: GameViewModel
     @State private var showSettings = false
     @State private var showExportOptions = false
     @State private var showMaxPrepsExport = false

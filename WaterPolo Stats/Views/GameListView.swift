@@ -3,6 +3,7 @@ import CoreData
 
 struct GameListView: View {
     @Environment(\.managedObjectContext) private var viewContext
+    @EnvironmentObject var gameViewModel: GameViewModel
     @FetchRequest(
         sortDescriptors: [NSSortDescriptor(keyPath: \Game.date, ascending: false)],
         animation: .default)
@@ -32,6 +33,7 @@ struct GameListView: View {
             }
             .sheet(isPresented: $showingAddGame) {
                 NewGameSetupView()
+                    .environmentObject(gameViewModel)
             }
             .alert("Error", isPresented: $showError, presenting: errorMessage) { _ in
                 Button("OK", role: .cancel) { }

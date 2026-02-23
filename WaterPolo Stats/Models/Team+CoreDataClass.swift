@@ -21,12 +21,11 @@ public class Team: NSManagedObject, Identifiable {
     public var wrappedLevel: String { level ?? "" }
     public var wrappedCreatedAt: Date { createdAt ?? Date() }
 
-    /// Display name: "680 Club - 16U B" or falls back to name.
+    /// "680 Red", "Clayton Valley", "UC Berkeley Bears", etc.
+    /// Joins clubName + name; falls back gracefully if either is empty.
     public var displayName: String {
-        guard !wrappedClubName.isEmpty, !wrappedLevel.isEmpty else {
-            return wrappedName
-        }
-        return "\(wrappedClubName) - \(wrappedLevel)"
+        let parts = [clubName ?? "", name ?? ""].filter { !$0.isEmpty }
+        return parts.isEmpty ? "Unknown Team" : parts.joined(separator: " ")
     }
 
     public var playersArray: [Player] {

@@ -48,8 +48,11 @@ public class Player: NSManagedObject, Identifiable {
         eventsArray.filter { $0.eventType == "exclusion" }.count
     }
 
-    /// Most recent cap number for this player (from most recent active roster entry).
+    /// Cap number: uses most recent game roster entry if available, otherwise falls back to stored number.
     public var currentCapNumber: Int? {
-        rostersArray.last.map { Int($0.capNumber) }
+        if let fromRoster = rostersArray.last.map({ Int($0.capNumber) }) {
+            return fromRoster
+        }
+        return number.flatMap { Int($0) }
     }
 }

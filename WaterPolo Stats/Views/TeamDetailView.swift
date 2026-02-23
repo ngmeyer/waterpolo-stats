@@ -1,16 +1,18 @@
 import SwiftUI
 import CoreData
+import PhotosUI
 
 // MARK: - Team Detail View
 // Full player and roster management for a team
 
 struct TeamDetailView: View {
-    let team: Team
+    @ObservedObject var team: Team
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.presentationMode) var presentationMode
     
     @State private var showAddPlayer = false
     @State private var showEditPlayer: Player?
+    @State private var showEditTeam = false
     @State private var searchText = ""
     @State private var selectedFilter = 0
     @State private var sortOrder = 0 // 0 = number, 1 = name, 2 = goals
@@ -66,12 +68,18 @@ struct TeamDetailView: View {
                 }
             }
         }
-        .navigationTitle(team.wrappedName)
+        .navigationTitle(team.displayName)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
-                Button(action: { showAddPlayer = true }) {
-                    Label("Add Player", systemImage: "person.badge.plus")
+                HStack(spacing: 16) {
+                    Button(action: { showEditTeam = true }) {
+                        Image(systemName: "pencil")
+                    }
+                    Button(action: { showAddPlayer = true }) {
+                        Image(systemName: "person.badge.plus")
+                    }
+                    .padding(.leading, 4)
                 }
             }
         }
@@ -80,6 +88,9 @@ struct TeamDetailView: View {
         }
         .sheet(item: $showEditPlayer) { player in
             EditPlayerSheet(player: player)
+        }
+        .sheet(isPresented: $showEditTeam) {
+            EditTeamSheet(team: team)
         }
     }
     
@@ -131,39 +142,68 @@ struct TeamDetailView: View {
 
 struct TeamHeaderSection: View {
     let team: Team
-    
+
+    @State private var avatarImage: UIImage?
+    @State private var pickerItem: PhotosPickerItem?
+
+    private var iconColor: Color { .teamColor(named: team.teamColor) }
+    private var iconLetter: String { String(team.displayName.prefix(1)).uppercased() }
+
     var body: some View {
         VStack(spacing: 12) {
-            // Team icon
-            ZStack {
-                Circle()
-                    .fill(Color.blue.opacity(0.2))
-                    .frame(width: 80, height: 80)
-                
-                Image(systemName: "person.3.fill")
-                    .font(.system(size: 36))
-                    .foregroundColor(.blue)
+            // Avatar circle — tap to pick a photo
+            ZStack(alignment: .bottomTrailing) {
+                PhotosPicker(selection: $pickerItem, matching: .images) {
+                    avatarCircle
+                }
+                .buttonStyle(.plain)
+
+                // Camera badge overlay
+                Image(systemName: "camera.fill")
+                    .font(.caption2.bold())
+                    .foregroundColor(.white)
+                    .padding(5)
+                    .background(iconColor)
+                    .clipShape(Circle())
+                    .offset(x: 4, y: 4)
             }
-            
-            // Team info
-            VStack(spacing: 4) {
-                Text(team.wrappedName)
+            .contextMenu {
+                if avatarImage != nil {
+                    Button("Remove Photo", role: .destructive) {
+                        avatarImage = nil
+                        TeamAvatarStore.shared.delete(for: team.wrappedId)
+                    }
+                }
+            }
+            .onChange(of: pickerItem) { _, item in
+                Task {
+                    if let data = try? await item?.loadTransferable(type: Data.self),
+                       let uiImage = UIImage(data: data) {
+                        let square = cropToSquare(uiImage)
+                        avatarImage = square
+                        TeamAvatarStore.shared.save(square, for: team.wrappedId)
+                    }
+                }
+            }
+
+            // Display name ("680 Red") + level pill
+            VStack(spacing: 6) {
+                Text(team.displayName)
                     .font(.title2)
                     .fontWeight(.bold)
-                
-                if !team.wrappedClubName.isEmpty {
-                    Text(team.wrappedClubName)
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                }
-                
+
                 if !team.wrappedLevel.isEmpty {
                     Text(team.wrappedLevel)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                        .foregroundColor(iconColor)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 3)
+                        .background(iconColor.opacity(0.12))
+                        .clipShape(Capsule())
                 }
             }
-            
+
             // Stats chips
             HStack(spacing: 12) {
                 StatChip(value: "\(team.playersArray.count)", label: "Players")
@@ -173,6 +213,41 @@ struct TeamHeaderSection: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, 12)
         .listRowBackground(Color.clear)
+        .onAppear {
+            avatarImage = TeamAvatarStore.shared.load(for: team.wrappedId)
+        }
+    }
+
+    @ViewBuilder
+    private var avatarCircle: some View {
+        ZStack {
+            Circle()
+                .fill(iconColor.opacity(0.2))
+                .frame(width: 80, height: 80)
+            if let img = avatarImage {
+                Image(uiImage: img)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 80, height: 80)
+                    .clipShape(Circle())
+            } else {
+                Text(iconLetter)
+                    .font(.system(size: 36, weight: .bold, design: .rounded))
+                    .foregroundColor(iconColor)
+            }
+        }
+    }
+
+    private func cropToSquare(_ image: UIImage) -> UIImage {
+        let side = min(image.size.width, image.size.height)
+        let origin = CGPoint(
+            x: (image.size.width - side) / 2,
+            y: (image.size.height - side) / 2
+        )
+        guard let cgImage = image.cgImage?.cropping(
+            to: CGRect(origin: origin, size: CGSize(width: side, height: side))
+        ) else { return image }
+        return UIImage(cgImage: cgImage, scale: image.scale, orientation: image.imageOrientation)
     }
 }
 
@@ -292,9 +367,6 @@ struct PlayerListRow: View {
             }
             .foregroundColor(.secondary)
             
-            Image(systemName: "chevron.right")
-                .font(.caption)
-                .foregroundColor(.secondary)
         }
         .padding(.vertical, 4)
     }
@@ -402,11 +474,11 @@ struct AddPlayerSheet: View {
             Form {
                 Section(header: Text("Player Info")) {
                     TextField("Full Name", text: $name)
-                    
-                    TextField("Jersey Number", text: $number)
+
+                    TextField("Cap Number", text: $number)
                         .keyboardType(.numberPad)
                 }
-                
+
                 Section(header: Text("Additional Info")) {
                     Toggle("Add Date of Birth", isOn: $showDatePicker)
                     
@@ -477,11 +549,11 @@ struct EditPlayerSheet: View {
             Form {
                 Section(header: Text("Player Info")) {
                     TextField("Full Name", text: $name)
-                    
-                    TextField("Jersey Number", text: $number)
+
+                    TextField("Cap Number", text: $number)
                         .keyboardType(.numberPad)
                 }
-                
+
                 Section(header: Text("Additional Info")) {
                     DatePicker("Birth Date", selection: Binding(
                         get: { dateOfBirth ?? Date() },
@@ -537,6 +609,199 @@ struct EditPlayerSheet: View {
     }
 }
 
+// MARK: - Edit Team Sheet
+
+struct EditTeamSheet: View {
+    let team: Team
+    @Environment(\.dismiss) var dismiss
+    @Environment(\.managedObjectContext) private var viewContext
+
+    @State private var orgName: String
+    @State private var teamSuffix: String
+    @State private var category: NewTeamCategory
+    @State private var ageGroup: ClubAgeGroup
+    @State private var clubGender: ClubGender
+    @State private var hsLevel: HSLevel
+    @State private var hsGender: HSGender
+    @State private var collegeGender: CollegeGender
+    @State private var selectedColor: String
+    @State private var showDeleteConfirm = false
+
+    init(team: Team) {
+        self.team = team
+        let level = team.wrappedLevel
+        let cat = Self.inferCategory(level)
+        _orgName       = State(initialValue: team.wrappedClubName)
+        _teamSuffix    = State(initialValue: team.name ?? "")
+        _category      = State(initialValue: cat)
+        _ageGroup      = State(initialValue: Self.inferAgeGroup(level))
+        _clubGender    = State(initialValue: Self.inferClubGender(level))
+        _hsLevel       = State(initialValue: Self.inferHSLevel(level))
+        _hsGender      = State(initialValue: Self.inferHSGender(level))
+        _collegeGender = State(initialValue: Self.inferCollegeGender(level))
+        _selectedColor = State(initialValue: team.teamColor ?? "blue")
+    }
+
+    private var levelString: String {
+        switch category {
+        case .club:       return "\(ageGroup.rawValue) \(clubGender.rawValue)"
+        case .highSchool: return "\(hsLevel.rawValue) \(hsGender.rawValue)"
+        case .college:    return collegeGender.rawValue
+        }
+    }
+
+    private var orgFieldLabel: String {
+        category == .club ? "Club Name" : "School Name"
+    }
+    private var suffixFieldPlaceholder: String {
+        switch category {
+        case .club:       return "e.g. Red, Gold, Blue (optional)"
+        case .highSchool: return "e.g. Eagles (optional)"
+        case .college:    return "e.g. Bears (optional)"
+        }
+    }
+
+    var body: some View {
+        NavigationView {
+            Form {
+                Section(header: Text("Team Info")) {
+                    TextField(orgFieldLabel, text: $orgName)
+                    TextField(suffixFieldPlaceholder, text: $teamSuffix)
+                }
+
+                Section(header: Text("Competition Level")) {
+                    Picker("Type", selection: $category) {
+                        ForEach(NewTeamCategory.allCases, id: \.self) {
+                            Text($0.rawValue).tag($0)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+
+                    switch category {
+                    case .club:
+                        Picker("Age Group", selection: $ageGroup) {
+                            ForEach(ClubAgeGroup.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+                        }
+                        Picker("Gender", selection: $clubGender) {
+                            ForEach(ClubGender.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+                        }
+                    case .highSchool:
+                        Picker("Level", selection: $hsLevel) {
+                            ForEach(HSLevel.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+                        }
+                        Picker("Gender", selection: $hsGender) {
+                            ForEach(HSGender.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+                        }
+                    case .college:
+                        Picker("Gender", selection: $collegeGender) {
+                            ForEach(CollegeGender.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+                        }
+                    }
+                }
+
+                Section(header: Text("Team Color")) {
+                    TeamColorPicker(selected: $selectedColor)
+                }
+
+                Section {
+                    Button("Delete Team", role: .destructive) {
+                        showDeleteConfirm = true
+                    }
+                }
+            }
+            .navigationTitle("Edit Team")
+            .navigationBarItems(
+                leading: Button("Cancel") { dismiss() },
+                trailing: Button("Save") { saveTeam() }.disabled(orgName.isEmpty)
+            )
+            .confirmationDialog(
+                "Delete \"\(team.displayName)\"?",
+                isPresented: $showDeleteConfirm,
+                titleVisibility: .visible
+            ) {
+                Button("Delete Team", role: .destructive) { deleteTeam() }
+            } message: {
+                Text("Players on this team will also be removed. Game history will remain.")
+            }
+        }
+    }
+
+    private func saveTeam() {
+        team.clubName  = orgName
+        team.name      = teamSuffix.isEmpty ? nil : teamSuffix
+        team.level     = levelString
+        team.teamColor = selectedColor
+        try? viewContext.save()
+        dismiss()
+    }
+
+    private func deleteTeam() {
+        viewContext.delete(team)
+        try? viewContext.save()
+        dismiss()
+    }
+
+    // MARK: Level string inference (parses stored level back into picker values)
+
+    private static func inferCategory(_ level: String) -> NewTeamCategory {
+        if ClubAgeGroup.allCases.contains(where: { level.hasPrefix($0.rawValue) }) { return .club }
+        if HSLevel.allCases.contains(where: { level.hasPrefix($0.rawValue) }) { return .highSchool }
+        return .college
+    }
+    private static func inferAgeGroup(_ l: String) -> ClubAgeGroup {
+        ClubAgeGroup.allCases.first { l.hasPrefix($0.rawValue) } ?? .u16
+    }
+    private static func inferClubGender(_ l: String) -> ClubGender {
+        ClubGender.allCases.first { l.hasSuffix($0.rawValue) } ?? .boys
+    }
+    private static func inferHSLevel(_ l: String) -> HSLevel {
+        HSLevel.allCases.first { l.hasPrefix($0.rawValue) } ?? .varsity
+    }
+    private static func inferHSGender(_ l: String) -> HSGender {
+        HSGender.allCases.first { l.hasSuffix($0.rawValue) } ?? .boys
+    }
+    private static func inferCollegeGender(_ l: String) -> CollegeGender {
+        CollegeGender.allCases.first { l == $0.rawValue } ?? .men
+    }
+}
+
+// MARK: - Team Color Picker
+
+struct TeamColorPicker: View {
+    @Binding var selected: String
+
+    private let palette: [(String, Color)] = [
+        ("blue", .blue), ("red", .red), ("green", .green),
+        ("orange", .orange), ("purple", .purple), ("teal", .teal),
+        ("pink", .pink), ("indigo", .indigo), ("yellow", .yellow),
+        ("gray", .gray)
+    ]
+
+    var body: some View {
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 5), spacing: 12) {
+            ForEach(palette, id: \.0) { name, color in
+                ZStack {
+                    Circle()
+                        .fill(color)
+                        .frame(width: 40, height: 40)
+                        .overlay(
+                            Circle()
+                                .strokeBorder(Color.primary.opacity(0.3), lineWidth: selected == name ? 3 : 0)
+                                .padding(-2)
+                        )
+                    if selected == name {
+                        Image(systemName: "checkmark")
+                            .font(.caption.bold())
+                            .foregroundColor(.white)
+                    }
+                }
+                .onTapGesture { selected = name }
+            }
+        }
+        .padding(.vertical, 6)
+    }
+}
+
 // MARK: - Preview
 
 struct TeamDetailView_Previews: PreviewProvider {
@@ -544,9 +809,9 @@ struct TeamDetailView_Previews: PreviewProvider {
         let context = PersistenceController.preview.container.viewContext
         let team = Team(context: context)
         team.id = UUID()
-        team.name = "Clayton Valley"
-        team.clubName = "CVWP"
-        team.level = "Boys Varsity"
+        team.name = "Sample Team"
+        team.clubName = "680 Club"
+        team.level = "16U Boys"
         
         return NavigationView {
             TeamDetailView(team: team)

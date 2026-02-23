@@ -10,12 +10,30 @@ import CoreData
 
 @main
 struct WaterPolo_StatsApp: App {
-    let persistenceController = PersistenceController.shared
+    @ObservedObject var persistenceController = PersistenceController.shared
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
-                .environment(\.managedObjectContext, persistenceController.container.viewContext)
+            if persistenceController.isReady {
+                ContentView()
+                    .environment(\.managedObjectContext, persistenceController.container.viewContext)
+                    .transition(.opacity)
+            } else {
+                splashView
+            }
         }
+    }
+
+    private var splashView: some View {
+        VStack(spacing: 20) {
+            Image(systemName: "sportscourt.fill")
+                .font(.system(size: 72))
+                .foregroundColor(.blue)
+            Text("Water Polo Stats")
+                .font(.largeTitle)
+                .fontWeight(.bold)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(.systemBackground))
     }
 }

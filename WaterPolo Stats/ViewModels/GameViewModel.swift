@@ -42,12 +42,27 @@ class GameViewModel: ObservableObject {
         ]
         let homeTeam = GameTeam(name: "Dark", players: homePlayers, isHomeTeam: true)
         let awayTeam = GameTeam(name: "Light", players: awayPlayers, isHomeTeam: false)
-        self.game = game ?? GameSession(homeTeam: homeTeam, awayTeam: awayTeam)
+        // Default placeholder: status=.completed so Score tab stays hidden until a real game is loaded
+        self.game = game ?? GameSession(homeTeam: homeTeam, awayTeam: awayTeam, status: .completed)
+    }
+
+    // MARK: - Load a new game (called from setup flows)
+
+    /// Replaces the current game with a freshly configured session.
+    /// Sets status to .ready so the Score tab becomes visible.
+    func loadGame(_ session: GameSession) {
+        stopTimer()
+        isTimerRunning = false
+        var newGame = session
+        newGame.status = .ready
+        newGame.isGameActive = false
+        game = newGame
     }
     
     // MARK: - Game Control
     
     func startGame() {
+        game.status = .inProgress
         game.isGameActive = true
         game.isPeriodActive = true
         isTimerRunning = true
@@ -55,19 +70,22 @@ class GameViewModel: ObservableObject {
         startTimer()
         recordEvent(type: .gameStart, team: .official)
     }
-    
+
     func pauseGame() {
+        game.status = .paused
         isTimerRunning = false
         stopTimer()
     }
-    
+
     func resumeGame() {
+        game.status = .inProgress
         isTimerRunning = true
         lastUpdateTime = Date()
         startTimer()
     }
-    
+
     func endGame() {
+        game.status = .completed
         stopTimer()
         game.isGameActive = false
         game.isPeriodActive = false
