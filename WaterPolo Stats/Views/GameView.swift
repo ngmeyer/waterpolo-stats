@@ -11,7 +11,7 @@ struct GameView: View {
     @State private var exportData: Data?
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             VStack(spacing: 0) {
                 // Scoreboard
                 HStack(spacing: 0) {
@@ -69,15 +69,19 @@ struct GameView: View {
                 
                 Spacer()
             }
-            .navigationTitle("Water Polo Scorer")
-            .navigationBarItems(
-                leading: Button(action: { showSettings = true }) {
-                    Image(systemName: "gearshape")
-                },
-                trailing: Button(action: { showExportOptions = true }) {
-                    Image(systemName: "square.and.arrow.up")
+            .navigationTitle("Game Stats")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(action: { showSettings = true }) {
+                        Image(systemName: "gearshape")
+                    }
                 }
-            )
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(action: { showExportOptions = true }) {
+                        Image(systemName: "square.and.arrow.up")
+                    }
+                }
+            }
             .sheet(isPresented: $viewModel.showPlayerSelection) {
                 if let player = viewModel.selectedPlayer {
                     PlayerActionSheet(
