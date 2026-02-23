@@ -5,7 +5,7 @@ import SwiftUI
 
 struct SettingsTabView: View {
     var body: some View {
-        NavigationView {
+        NavigationStack {
             List {
                 Section(header: Text("Data")) {
                     NavigationLink(destination: DataManagementView()) {

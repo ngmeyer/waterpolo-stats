@@ -10,13 +10,11 @@ struct SimpleGameView: View {
 
     // UI State
     @State private var showSaveConfirmation = false
-    @State private var showFullMode = false
     @State private var showingActionSheet: GameActionType?
     @State private var selectedPlayerForAction: GamePlayer?
-    @State private var isAdvancedMode = false
+    @AppStorage("isAdvancedScoring") private var isAdvancedMode = true
     @State private var showTimeoutTeamPicker = false
     @State private var showSettings = false
-    @State private var showExportSheet = false
 
     // Editing
     @State private var editingAction: GameActionRecord?
@@ -36,7 +34,7 @@ struct SimpleGameView: View {
     @State private var orientation = UIDevice.current.orientation
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ZStack {
                 backgroundColor.ignoresSafeArea()
                 
@@ -51,11 +49,9 @@ struct SimpleGameView: View {
             }
             .navigationBarHidden(true)
         }
+        .preferredColorScheme(isSunlightMode ? .light : .dark)
         .sheet(isPresented: $showImagePicker) {
             ImagePicker(image: $capturedImage, onCapture: savePhoto)
-        }
-        .sheet(isPresented: $showFullMode) {
-            GameView().environmentObject(viewModel)
         }
         .sheet(item: $showingActionSheet) { actionType in
             ActionPlayerPickerSheet(
@@ -98,9 +94,6 @@ struct SimpleGameView: View {
         .sheet(isPresented: $showSettings) {
             SettingsViewStandalone(isSunlightMode: $manualSunlightMode)
                 .environmentObject(viewModel)
-        }
-        .sheet(isPresented: $showExportSheet) {
-            ExportSheetView(game: viewModel.game)
         }
         .onChange(of: viewModel.periodJustEnded) { _, justEnded in
             if justEnded {
@@ -232,11 +225,6 @@ struct SimpleGameView: View {
                         Image(systemName: "gearshape.fill")
                             .font(.system(size: 18))
                             .foregroundColor(.gray)
-                    }
-                    Button(action: { showExportSheet = true }) {
-                        Image(systemName: "square.and.arrow.up")
-                            .font(.system(size: 18))
-                            .foregroundColor(.blue)
                     }
                 }
 
@@ -544,43 +532,17 @@ struct SimpleGameView: View {
             
             Spacer()
 
-            // Center: Advanced toggle
-            VStack(spacing: 2) {
-                Text(isAdvancedMode ? "Advanced" : "Basic")
-                    .font(.caption)
-                    .fontWeight(.medium)
-                    .foregroundColor(textColor)
-                Toggle("", isOn: $isAdvancedMode)
-                    .toggleStyle(.switch)
-                    .labelsHidden()
-            }
-
-            Spacer()
-            
-            // Right: Shot Clock Reset (advanced) or Full Stats (basic)
-            if isAdvancedMode {
-                Button(action: resetShotClock) {
-                    VStack(spacing: 2) {
-                        Image(systemName: "clock.arrow.2.circlepath")
-                            .font(.title3)
-                        Text("Shot Clk")
-                            .font(.caption2)
-                    }
-                    .foregroundColor(textColor)
+            // Right: Shot Clock Reset
+            Button(action: resetShotClock) {
+                VStack(spacing: 2) {
+                    Image(systemName: "clock.arrow.2.circlepath")
+                        .font(.title3)
+                    Text("Shot Clk")
+                        .font(.caption2)
                 }
-                .frame(width: 60)
-            } else {
-                Button(action: { showFullMode = true }) {
-                    VStack(spacing: 2) {
-                        Image(systemName: "list.bullet")
-                            .font(.title3)
-                        Text("Stats")
-                            .font(.caption2)
-                    }
-                    .foregroundColor(textColor)
-                }
-                .frame(width: 60)
+                .foregroundColor(textColor)
             }
+            .frame(width: 60)
         }
         .padding(.horizontal)
         .padding(.vertical, 12)
@@ -1026,7 +988,7 @@ struct ActionPlayerPickerSheet: View {
     let initialTeam: GameViewModel.TeamType
     let onSelect: (GameViewModel.TeamType, GamePlayer, GamePlayer?, Bool) -> Void
 
-    @Environment(\.presentationMode) var presentationMode
+    @Environment(\.dismiss) private var dismiss
     @State private var selectedTeam: GameViewModel.TeamType
     @State private var selectedPlayer: GamePlayer?
     @State private var secondaryPlayer: GamePlayer?
@@ -1064,7 +1026,7 @@ struct ActionPlayerPickerSheet: View {
     private let gridColumns = [GridItem(.adaptive(minimum: 76), spacing: 8)]
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ScrollView {
                 VStack(spacing: 16) {
                     // Header
@@ -1178,7 +1140,7 @@ struct ActionPlayerPickerSheet: View {
                     Button(action: {
                         if let player = selectedPlayer {
                             onSelect(selectedTeam, player, secondaryPlayer, isFiveMeterShot)
-                            presentationMode.wrappedValue.dismiss()
+                            dismiss()
                         }
                     }) {
                         Text("Record Action")
@@ -1253,7 +1215,7 @@ struct EditActionSheet: View {
     let action: GameActionRecord
     let onSave: (GameActionRecord) -> Void
     let onDelete: () -> Void
-    @Environment(\.presentationMode) var presentationMode
+    @Environment(\.dismiss) private var dismiss
     
     @State private var gameTime: TimeInterval
     @State private var playerNumber: String
@@ -1273,7 +1235,7 @@ struct EditActionSheet: View {
     }
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             Form {
                 Section("Time") {
                     HStack {
@@ -1317,19 +1279,23 @@ struct EditActionSheet: View {
                             isPenaltyFoul: isPenaltyFoul
                         )
                         onSave(updatedAction)
-                        presentationMode.wrappedValue.dismiss()
+                        dismiss()
                     }
                     
                     Button("Delete Action", role: .destructive) {
                         onDelete()
-                        presentationMode.wrappedValue.dismiss()
+                        dismiss()
                     }
                 }
             }
             .navigationTitle("Edit Action")
-            .navigationBarItems(trailing: Button("Cancel") {
-                presentationMode.wrappedValue.dismiss()
-            })
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+            }
         }
     }
     
@@ -1350,7 +1316,7 @@ struct PeriodSummarySheet: View {
     private var completedPeriod: Int { game.period }
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             VStack(spacing: 0) {
                 // Score banner
                 HStack(spacing: 0) {
@@ -1526,7 +1492,7 @@ struct PeriodSummarySheet: View {
 struct ImagePicker: UIViewControllerRepresentable {
     @Binding var image: UIImage?
     var onCapture: ((UIImage) -> Void)?
-    @Environment(\.presentationMode) var presentationMode
+    @Environment(\.dismiss) private var dismiss
     
     func makeUIViewController(context: Context) -> UIImagePickerController {
         let picker = UIImagePickerController()
@@ -1553,11 +1519,11 @@ struct ImagePicker: UIViewControllerRepresentable {
                 parent.image = image
                 parent.onCapture?(image)
             }
-            parent.presentationMode.wrappedValue.dismiss()
+            parent.dismiss()
         }
         
         func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
-            parent.presentationMode.wrappedValue.dismiss()
+            parent.dismiss()
         }
     }
 }

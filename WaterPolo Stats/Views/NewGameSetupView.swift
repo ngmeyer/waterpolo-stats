@@ -87,6 +87,8 @@ struct NewGameSetupView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @EnvironmentObject var gameViewModel: GameViewModel
 
+    @AppStorage("isAdvancedScoring") private var isAdvancedScoring = true
+
     // Teams
     @State private var homeTeam: Team?
     @State private var awayTeam: Team?
@@ -172,6 +174,8 @@ struct NewGameSetupView: View {
                     Text($0.rawValue).tag($0)
                 }
             }
+
+            Toggle("Advanced Scoring", isOn: $isAdvancedScoring)
         }
     }
 
