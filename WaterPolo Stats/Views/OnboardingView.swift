@@ -219,7 +219,7 @@ struct TeamSetupStepView: View {
                 
                 // Home Team
                 VStack(alignment: .leading, spacing: 8) {
-                    Label("Home Team", systemImage: "house.fill")
+                    Text("Home Team (Dark Caps)")
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                     
@@ -233,7 +233,7 @@ struct TeamSetupStepView: View {
                 
                 // Away Team
                 VStack(alignment: .leading, spacing: 8) {
-                    Label("Away Team", systemImage: "airplane")
+                    Text("Away Team (Light Caps)")
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                     
@@ -371,12 +371,14 @@ struct RosterEditor: View {
                     TextField("Player Name", text: $newPlayerName)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
 
-                    Toggle(isOn: $isGoalie) {
+                    VStack(spacing: 2) {
+                        Toggle("", isOn: $isGoalie)
+                            .toggleStyle(.switch)
+                            .labelsHidden()
                         Text("Goalie")
-                            .font(.caption)
+                            .font(.caption2)
                     }
-                    .toggleStyle(.switch)
-                    .frame(minWidth: 60)
+                    .frame(width: 60)
                 }
                 
                 Button(action: addPlayer) {

@@ -10,7 +10,7 @@ import CoreData
 
 struct ContentView: View {
     @Environment(\.managedObjectContext) private var viewContext
-    @State private var selectedTab = 1  // Start on Simple Game tab
+    @State private var selectedTab = 0  // Start on Games List
     @State private var useSimpleMode = true
     @State private var showOnboarding = false
     @State private var onboardingGame: GameSession?

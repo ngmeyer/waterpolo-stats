@@ -26,12 +26,12 @@ struct GameListView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: { showingAddGame = true }) {
-                        Label("Add Game", systemImage: "plus")
+                        Label("New Game", systemImage: "plus")
                     }
                 }
             }
             .sheet(isPresented: $showingAddGame) {
-                AddGameView()
+                NewGameSetupView()
             }
             .alert("Error", isPresented: $showError, presenting: errorMessage) { _ in
                 Button("OK", role: .cancel) { }
