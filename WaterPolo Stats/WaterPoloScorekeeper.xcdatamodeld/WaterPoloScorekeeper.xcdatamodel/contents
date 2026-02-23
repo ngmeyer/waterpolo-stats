@@ -3,11 +3,15 @@
     <entity name="Game" representedClassName="Game" syncable="YES">
         <attribute name="awayTeamId" optional="YES" attributeType="UUID"/>
         <attribute name="date" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="gameType" optional="YES" attributeType="String"/>
         <attribute name="homeTeamId" optional="YES" attributeType="UUID"/>
         <attribute name="id" optional="YES" attributeType="UUID"/>
         <attribute name="location" optional="YES" attributeType="String"/>
+        <attribute name="scheduledDate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="seasonId" optional="YES" attributeType="UUID"/>
         <attribute name="status" optional="YES" attributeType="String"/>
+        <attribute name="tournamentRound" optional="YES" attributeType="String"/>
+        <attribute name="venueAddress" optional="YES" attributeType="String"/>
         <relationship name="awayTeam" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Team" inverseName="awayGames" inverseEntity="Team"/>
         <relationship name="events" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="GameEvent" inverseName="game" inverseEntity="GameEvent"/>
         <relationship name="homeTeam" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Team" inverseName="homeGames" inverseEntity="Team"/>

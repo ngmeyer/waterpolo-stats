@@ -5,7 +5,11 @@ import CoreData
 public class Game: NSManagedObject, Identifiable, @unchecked Sendable {
     @NSManaged public var id: UUID?
     @NSManaged public var date: Date?
+    @NSManaged public var scheduledDate: Date?
+    @NSManaged public var gameType: String?
     @NSManaged public var location: String?
+    @NSManaged public var venueAddress: String?
+    @NSManaged public var tournamentRound: String?
     @NSManaged public var status: String?
     @NSManaged public var homeTeamId: UUID?
     @NSManaged public var awayTeamId: UUID?
@@ -17,8 +21,13 @@ public class Game: NSManagedObject, Identifiable, @unchecked Sendable {
     @NSManaged public var rosters: Set<GameRoster>?
 
     public var wrappedId: UUID { id ?? UUID() }
-    public var wrappedDate: Date { date ?? Date() }
+    public var wrappedDate: Date { scheduledDate ?? date ?? Date() }
     public var wrappedLocation: String { location ?? "" }
+    public var wrappedVenueAddress: String { venueAddress ?? "" }
+    public var wrappedTournamentRound: String { tournamentRound ?? "" }
+    var wrappedGameType: GameSession.GameType {
+        GameSession.GameType(rawValue: gameType ?? "") ?? .league
+    }
 
     public var gameStatus: GameStatus {
         get { GameStatus(rawValue: status ?? "") ?? .inProgress }

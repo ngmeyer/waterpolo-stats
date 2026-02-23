@@ -82,7 +82,10 @@ struct GameSession: Identifiable, Codable {
     var actions: [GameActionRecord]
     var gameType: GameType
     var gameLevel: GameLevel
-    var location: String
+    var location: String        // venue name (e.g. "American River College")
+    var venueAddress: String    // street address for geolocation
+    var tournamentRound: String // e.g. "Semi-Finals" — only used when gameType == .tournament
+    var scheduledDate: Date     // planned game date/time (set before clock starts)
     var notes: String
     var homeTimeoutsRemaining: Int
     var awayTimeoutsRemaining: Int
@@ -182,10 +185,10 @@ struct GameSession: Identifiable, Codable {
     }
 
     enum GameType: String, Codable, CaseIterable {
-        case league    = "League"
-        case nonLeague = "Non-League"
-        case tournament = "Tournament"
-        case scrimmage = "Scrimmage"
+        case league        = "League"
+        case nonConference = "Non-Conference"
+        case tournament    = "Tournament"
+        case exhibition    = "Exhibition"
     }
 
     enum GameLevel: String, Codable, CaseIterable {
@@ -264,6 +267,9 @@ struct GameSession: Identifiable, Codable {
         gameType: GameType = .league,
         gameLevel: GameLevel = .girlsVarsity,
         location: String = "",
+        venueAddress: String = "",
+        tournamentRound: String = "",
+        scheduledDate: Date = Date(),
         notes: String = "",
         maxTimeoutsPerTeam: Int? = nil,
         overtimePeriodLength: TimeInterval = 180.0,
@@ -287,6 +293,9 @@ struct GameSession: Identifiable, Codable {
         self.gameType = gameType
         self.gameLevel = gameLevel
         self.location = location
+        self.venueAddress = venueAddress
+        self.tournamentRound = tournamentRound
+        self.scheduledDate = scheduledDate
         self.notes = notes
         self.events = []
         self.actions = []

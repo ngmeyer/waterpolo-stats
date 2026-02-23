@@ -14,7 +14,7 @@ struct GameListView: View {
     @State private var showError = false
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             List {
                 ForEach(games) { game in
                     NavigationLink(destination: SavedGameDetailView(game: game)) {
@@ -39,6 +39,17 @@ struct GameListView: View {
                 Button("OK", role: .cancel) { }
             } message: { error in
                 Text(error)
+            }
+            .overlay {
+                if games.isEmpty {
+                    EmptyStateView(
+                        icon: "sportscourt",
+                        title: "No Games Yet",
+                        message: "Tap + to set up your first game",
+                        buttonTitle: "New Game",
+                        buttonAction: { showingAddGame = true }
+                    )
+                }
             }
         }
     }
@@ -147,7 +158,7 @@ struct StatusBadge: View {
 
 struct GameDetailView: View {
     let game: Game
-    @Environment(\.presentationMode) var presentationMode
+    @Environment(\.dismiss) private var dismiss
     
     var body: some View {
         VStack {
@@ -185,7 +196,7 @@ struct GameDetailView: View {
 }
 
 struct AddGameView: View {
-    @Environment(\.presentationMode) var presentationMode
+    @Environment(\.dismiss) private var dismiss
     @Environment(\.managedObjectContext) private var viewContext
     @State private var homeTeamName = ""
     @State private var awayTeamName = ""
@@ -194,7 +205,7 @@ struct AddGameView: View {
     @State private var showError = false
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             Form {
                 Section(header: Text("Team Names")) {
                     TextField("Home Team", text: $homeTeamName)
@@ -206,36 +217,40 @@ struct AddGameView: View {
                 }
             }
             .navigationTitle("Add Game")
-            .navigationBarItems(
-                leading: Button("Cancel") {
-                    presentationMode.wrappedValue.dismiss()
-                },
-                trailing: Button("Save") {
-                    let newGame = Game(context: viewContext)
-                    newGame.id = UUID()
-                    newGame.date = Date()
-                    newGame.location = location
-                    
-                    let homeTeam = Team(context: viewContext)
-                    homeTeam.id = UUID()
-                    homeTeam.name = homeTeamName.isEmpty ? "Home Team" : homeTeamName
-                    
-                    let awayTeam = Team(context: viewContext)
-                    awayTeam.id = UUID()
-                    awayTeam.name = awayTeamName.isEmpty ? "Away Team" : awayTeamName
-                    
-                    newGame.homeTeam = homeTeam
-                    newGame.awayTeam = awayTeam
-                    
-                    do {
-                        try viewContext.save()
-                        presentationMode.wrappedValue.dismiss()
-                    } catch {
-                        errorMessage = "Failed to save game: \(error.localizedDescription)"
-                        showError = true
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        dismiss()
                     }
                 }
-            )
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        let newGame = Game(context: viewContext)
+                        newGame.id = UUID()
+                        newGame.date = Date()
+                        newGame.location = location
+                        
+                        let homeTeam = Team(context: viewContext)
+                        homeTeam.id = UUID()
+                        homeTeam.name = homeTeamName.isEmpty ? "Home Team" : homeTeamName
+                        
+                        let awayTeam = Team(context: viewContext)
+                        awayTeam.id = UUID()
+                        awayTeam.name = awayTeamName.isEmpty ? "Away Team" : awayTeamName
+                        
+                        newGame.homeTeam = homeTeam
+                        newGame.awayTeam = awayTeam
+                        
+                        do {
+                            try viewContext.save()
+                            dismiss()
+                        } catch {
+                            errorMessage = "Failed to save game: \(error.localizedDescription)"
+                            showError = true
+                        }
+                    }
+                }
+            }
             .alert("Error", isPresented: $showError, presenting: errorMessage) { _ in
                 Button("OK", role: .cancel) { }
             } message: { error in

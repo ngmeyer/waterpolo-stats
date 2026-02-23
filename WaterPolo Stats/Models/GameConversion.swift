@@ -27,9 +27,13 @@ extension GameSession {
         // Upsert: find existing or create new
         let gameEntity = fetchOrCreateGame(id: self.id, context: context)
 
-        gameEntity.date     = self.startTime
-        gameEntity.location = self.location
-        gameEntity.status   = self.status.rawValue
+        gameEntity.date          = self.startTime
+        gameEntity.scheduledDate = self.scheduledDate
+        gameEntity.location      = self.location.isEmpty ? nil : self.location
+        gameEntity.venueAddress  = self.venueAddress.isEmpty ? nil : self.venueAddress
+        gameEntity.tournamentRound = self.tournamentRound.isEmpty ? nil : self.tournamentRound
+        gameEntity.gameType      = self.gameType.rawValue
+        gameEntity.status        = self.status.rawValue
 
         // Resolve season if provided
         if let sid = self.seasonId {
@@ -111,7 +115,11 @@ extension GameSession {
             homeTeam: homeGameTeam,
             awayTeam: awayGameTeam,
             isGameActive: gameStatus == .inProgress,
+            gameType: game.wrappedGameType,
             location: game.wrappedLocation,
+            venueAddress: game.wrappedVenueAddress,
+            tournamentRound: game.wrappedTournamentRound,
+            scheduledDate: game.scheduledDate ?? game.date ?? Date(),
             status: gameStatus,
             homeRoster: homeRoster,
             awayRoster: awayRoster,
