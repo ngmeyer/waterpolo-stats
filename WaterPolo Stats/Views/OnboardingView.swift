@@ -143,22 +143,10 @@ struct WelcomeStepView: View {
         VStack(spacing: 32) {
             Spacer()
             
-            // App icon placeholder
-            ZStack {
-                RoundedRectangle(cornerRadius: 24)
-                    .fill(
-                        LinearGradient(
-                            colors: [.blue, .cyan],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .frame(width: 120, height: 120)
-                
-                Image(systemName: "sportscourt.fill")
-                    .font(.system(size: 60))
-                    .foregroundColor(.white)
-            }
+            // App icon
+            WaterPoloPoolIcon(size: 120)
+                .clipShape(RoundedRectangle(cornerRadius: 24))
+                .shadow(radius: 10)
             
             VStack(spacing: 12) {
                 Text("Water Polo Stats")
