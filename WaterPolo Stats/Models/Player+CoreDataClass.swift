@@ -2,7 +2,7 @@ import Foundation
 import CoreData
 
 @objc(Player)
-public class Player: NSManagedObject, Identifiable, @unchecked Sendable {
+public class Player: NSManagedObject, Identifiable {
     @NSManaged public var id: UUID?
     @NSManaged public var name: String?
     @NSManaged public var number: String?

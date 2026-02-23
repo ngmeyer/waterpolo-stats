@@ -3,7 +3,7 @@ import CoreData
 
 /// A water polo season: Aug 1 of `year` through Jul 31 of `year+1`.
 @objc(Season)
-public class Season: NSManagedObject, Identifiable, @unchecked Sendable {
+public class Season: NSManagedObject, Identifiable {
     @NSManaged public var id: UUID?
     @NSManaged public var year: Int16         // e.g. 2025 = Aug 2025 - Jul 2026
     @NSManaged public var startDate: Date?    // Aug 1 of year

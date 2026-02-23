@@ -7,7 +7,7 @@ import CoreData
 /// same player: the exiting entry gets `exitedGameAt` set and a new entry is
 /// inserted with a higher `rosterOrder` and the new `capNumber`.
 @objc(GameRoster)
-public class GameRoster: NSManagedObject, Identifiable, @unchecked Sendable {
+public class GameRoster: NSManagedObject, Identifiable {
     @NSManaged public var id: UUID?
     @NSManaged public var capNumber: Int16
     @NSManaged public var isGoalie: Bool

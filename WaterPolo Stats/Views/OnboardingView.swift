@@ -367,12 +367,16 @@ struct RosterEditor: View {
                         .keyboardType(.numberPad)
                         .frame(width: 50)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
-                    
+
                     TextField("Player Name", text: $newPlayerName)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
-                    
-                    Toggle("Goalie", isOn: $isGoalie)
-                        .frame(width: 80)
+
+                    Toggle(isOn: $isGoalie) {
+                        Text("Goalie")
+                            .font(.caption)
+                    }
+                    .toggleStyle(.switch)
+                    .frame(minWidth: 60)
                 }
                 
                 Button(action: addPlayer) {

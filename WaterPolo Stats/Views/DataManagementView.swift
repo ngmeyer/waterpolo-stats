@@ -214,10 +214,10 @@ struct DataManagementView: View {
             let fetchRequest: NSFetchRequest<NSFetchRequestResult> = NSFetchRequest(entityName: entityName)
             let deleteRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
             
-            try? viewContext.execute(deleteRequest)
+            _ = try? viewContext.execute(deleteRequest)
         }
         
-        try? viewContext.save()
+        _ = try? viewContext.save()
     }
 }
 
