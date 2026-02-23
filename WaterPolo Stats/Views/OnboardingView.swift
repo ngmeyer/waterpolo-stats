@@ -289,9 +289,33 @@ struct RosterSetupStepView: View {
     @Binding var homeTeam: GameTeam
     @Binding var awayTeam: GameTeam
     @State private var editingHomeTeam = true
+    @State private var trackByNumberOnly = false
     
     var body: some View {
         VStack(spacing: 0) {
+            // Track by number only toggle
+            VStack(spacing: 12) {
+                Toggle("Track by Numbers Only", isOn: $trackByNumberOnly)
+                    .onChange(of: trackByNumberOnly) { _, newValue in
+                        if newValue {
+                            // Auto-populate both teams with 1-20
+                            autoPopulateTeam(&homeTeam)
+                            autoPopulateTeam(&awayTeam)
+                        }
+                    }
+                
+                if trackByNumberOnly {
+                    Text("Players will be tracked as #1, #2, etc. You can add names later.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+            }
+            .padding()
+            .background(Color.blue.opacity(0.1))
+            .cornerRadius(8)
+            .padding(.horizontal)
+            
             // Team selector
             Picker("Team", selection: $editingHomeTeam) {
                 Text(homeTeam.name).tag(true)
@@ -300,12 +324,49 @@ struct RosterSetupStepView: View {
             .pickerStyle(.segmented)
             .padding()
             
-            // Roster editor
-            if editingHomeTeam {
-                RosterEditor(team: $homeTeam)
+            // Roster editor (hidden if tracking by number only)
+            if !trackByNumberOnly {
+                if editingHomeTeam {
+                    RosterEditor(team: $homeTeam)
+                } else {
+                    RosterEditor(team: $awayTeam)
+                }
             } else {
-                RosterEditor(team: $awayTeam)
+                // Show summary when tracking by numbers
+                VStack(spacing: 16) {
+                    Spacer()
+                    Image(systemName: "number.circle.fill")
+                        .font(.system(size: 60))
+                        .foregroundColor(.blue)
+                    
+                    Text("Auto-populated 1-20")
+                        .font(.headline)
+                    
+                    Text("Both teams have players #1-20 ready. You can add names during the game or later.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 40)
+                    
+                    Spacer()
+                }
             }
+        }
+    }
+    
+    private func autoPopulateTeam(_ team: inout GameTeam) {
+        // Only add if roster is empty
+        guard team.players.isEmpty else { return }
+        
+        // Create players 1-20
+        for i in 1...20 {
+            let player = GamePlayer(
+                number: i,
+                name: "",  // Empty name = track by number only
+                isInGame: true,
+                isGoalie: (i == 1)  // Default goalie to #1
+            )
+            team.players.append(player)
         }
     }
 }
@@ -316,19 +377,33 @@ struct RosterEditor: View {
     @State private var newPlayerName = ""
     @State private var isGoalie = false
     
+    // Edit player state
+    @State private var editingPlayerIndex: Int?
+    @State private var editPlayerNumber = ""
+    @State private var editPlayerName = ""
+    @State private var editIsGoalie = false
+    @State private var showEditPlayer = false
+    
     var body: some View {
         VStack(spacing: 0) {
             // Current roster list
             List {
                 Section(header: Text("Roster (\(team.players.count) players)")) {
-                    ForEach(team.players) { player in
+                    ForEach(team.players.indices, id: \.self) { index in
+                        let player = team.players[index]
                         HStack {
                             Text("#\(player.number)")
                                 .font(.system(.body, design: .monospaced))
                                 .fontWeight(.bold)
                                 .frame(width: 40)
                             
-                            Text(player.name)
+                            if player.name.isEmpty {
+                                Text("Player #\(player.number)")
+                                    .foregroundColor(.secondary)
+                                    .italic()
+                            } else {
+                                Text(player.name)
+                            }
                             
                             Spacer()
                             
@@ -336,6 +411,14 @@ struct RosterEditor: View {
                                 Image(systemName: "shield.fill")
                                     .foregroundColor(.blue)
                             }
+                        }
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            editingPlayerIndex = index
+                            editPlayerNumber = String(player.number)
+                            editPlayerName = player.name
+                            editIsGoalie = player.isGoalie
+                            showEditPlayer = true
                         }
                     }
                     .onDelete { indexSet in
@@ -350,14 +433,23 @@ struct RosterEditor: View {
                 Text("Add Player")
                     .font(.headline)
                 
+                // Tracking mode toggle
+                Picker("Tracking Mode", selection: $trackingMode) {
+                    Text("Names + Numbers").tag(TrackingMode.fullNames)
+                    Text("Numbers Only").tag(TrackingMode.numbersOnly)
+                }
+                .pickerStyle(.segmented)
+                
                 HStack(spacing: 12) {
                     TextField("#", text: $newPlayerNumber)
                         .keyboardType(.numberPad)
                         .frame(width: 50)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
 
-                    TextField("Player Name", text: $newPlayerName)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                    if trackingMode == .fullNames {
+                        TextField("Player Name", text: $newPlayerName)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                    }
 
                     VStack(spacing: 2) {
                         Toggle("", isOn: $isGoalie)
@@ -379,14 +471,67 @@ struct RosterEditor: View {
                         .cornerRadius(10)
                 }
                 .disabled(!canAdd)
+                
+                // Skip/Auto-populate button
+                if team.players.isEmpty {
+                    Button(action: autoPopulateRoster) {
+                        Label("Skip - Auto-populate 1-20", systemImage: "person.3.sequence")
+                            .font(.subheadline)
+                    }
+                    .foregroundColor(.secondary)
+                }
             }
             .padding()
             .background(Color(.systemGray6))
         }
+        .sheet(isPresented: $showEditPlayer) {
+            NavigationView {
+                Form {
+                    Section(header: Text("Player Info")) {
+                        TextField("Number", text: $editPlayerNumber)
+                            .keyboardType(.numberPad)
+                        
+                        TextField("Name (optional)", text: $editPlayerName)
+                        
+                        Toggle("Goalie", isOn: $editIsGoalie)
+                    }
+                    
+                    Section {
+                        Button(action: updatePlayer) {
+                            Text("Save Changes")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .disabled(editPlayerNumber.isEmpty)
+                    }
+                }
+                .navigationTitle("Edit Player")
+                .navigationBarItems(
+                    leading: Button("Cancel") {
+                        showEditPlayer = false
+                    },
+                    trailing: Button("Save") {
+                        updatePlayer()
+                    }
+                    .disabled(editPlayerNumber.isEmpty)
+                )
+            }
+        }
+    }
+    
+    @State private var trackingMode: TrackingMode = .fullNames
+    
+    enum TrackingMode {
+        case fullNames, numbersOnly
     }
     
     private var canAdd: Bool {
-        !newPlayerNumber.isEmpty && !newPlayerName.isEmpty
+        guard !newPlayerNumber.isEmpty,
+              let _ = Int(newPlayerNumber) else { return false }
+        
+        if trackingMode == .fullNames {
+            return !newPlayerName.isEmpty
+        }
+        return true
     }
     
     private func addPlayer() {
@@ -394,7 +539,7 @@ struct RosterEditor: View {
         
         let player = GamePlayer(
             number: number,
-            name: newPlayerName,
+            name: trackingMode == .numbersOnly ? "" : newPlayerName,
             isInGame: true,
             isGoalie: isGoalie
         )
@@ -405,6 +550,31 @@ struct RosterEditor: View {
         newPlayerNumber = ""
         newPlayerName = ""
         isGoalie = false
+    }
+    
+    private func autoPopulateRoster() {
+        // Create players 1-20
+        for i in 1...20 {
+            let player = GamePlayer(
+                number: i,
+                name: "",  // Empty name = track by number only
+                isInGame: true,
+                isGoalie: (i == 1)  // Default goalie to #1
+            )
+            team.players.append(player)
+        }
+    }
+    
+    private func updatePlayer() {
+        guard let index = editingPlayerIndex,
+              let number = Int(editPlayerNumber) else { return }
+        
+        team.players[index].number = number
+        team.players[index].name = editPlayerName
+        team.players[index].isGoalie = editIsGoalie
+        
+        showEditPlayer = false
+        editingPlayerIndex = nil
     }
 }
 
