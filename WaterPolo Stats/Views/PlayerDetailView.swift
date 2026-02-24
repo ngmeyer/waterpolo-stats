@@ -4,14 +4,14 @@ import SwiftUI
 // Uses GamePlayer/GameTeam structs for real-time scoring
 
 struct PlayerDetailView: View {
-    @Environment(\.presentationMode) var presentationMode
+    @Environment(\.dismiss) private var dismiss
     let player: GamePlayer
     let team: GameTeam
     let gameLog: [GameEventRecord]
     let viewModel: GameViewModel
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ZStack {
                 WaterPoloColors.background
                     .ignoresSafeArea()
@@ -46,7 +46,7 @@ struct PlayerDetailView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") {
-                        presentationMode.wrappedValue.dismiss()
+                        dismiss()
                     }
                 }
             }

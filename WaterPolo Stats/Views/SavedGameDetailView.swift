@@ -7,7 +7,7 @@ import CoreData
 struct SavedGameDetailView: View {
     let game: Game
     @Environment(\.managedObjectContext) private var viewContext
-    @Environment(\.presentationMode) var presentationMode
+    @Environment(\.dismiss) private var dismiss
     
     @State private var showExportSheet = false
     @State private var showDeleteConfirmation = false
@@ -105,7 +105,7 @@ struct SavedGameDetailView: View {
     private func deleteGame() {
         viewContext.delete(game)
         try? viewContext.save()
-        presentationMode.wrappedValue.dismiss()
+        dismiss()
     }
 }
 

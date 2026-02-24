@@ -359,14 +359,14 @@ class ExportManager {
 
 struct ExportSheetView: View {
     let game: GameSession
-    @Environment(\.presentationMode) var presentationMode
+    @Environment(\.dismiss) private var dismiss
     
     @State private var showShareSheet = false
     @State private var shareItems: [Any] = []
     @State private var showCopiedAlert = false
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             List {
                 // Parent Share Section
                 Section(header: Text("Quick Share")) {
@@ -440,7 +440,7 @@ struct ExportSheetView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") {
-                        presentationMode.wrappedValue.dismiss()
+                        dismiss()
                     }
                 }
             }

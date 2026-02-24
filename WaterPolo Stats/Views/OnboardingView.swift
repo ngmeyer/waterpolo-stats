@@ -5,7 +5,7 @@ import SwiftUI
 
 struct OnboardingView: View {
     @Environment(\.managedObjectContext) private var viewContext
-    @Environment(\.presentationMode) var presentationMode
+    @Environment(\.dismiss) private var dismiss
     
     @State private var currentStep = 0
     @State private var homeTeam = GameTeam(name: "Dark Caps", isHomeTeam: true)
@@ -17,7 +17,7 @@ struct OnboardingView: View {
     let onComplete: (GameSession) -> Void
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             VStack(spacing: 0) {
                 // Progress indicator
                 ProgressView(value: Double(currentStep + 1), total: Double(totalSteps))
@@ -485,7 +485,7 @@ struct RosterEditor: View {
             .background(Color(.systemGray6))
         }
         .sheet(isPresented: $showEditPlayer) {
-            NavigationView {
+            NavigationStack {
                 Form {
                     Section(header: Text("Player Info")) {
                         TextField("Number", text: $editPlayerNumber)
@@ -505,15 +505,19 @@ struct RosterEditor: View {
                     }
                 }
                 .navigationTitle("Edit Player")
-                .navigationBarItems(
-                    leading: Button("Cancel") {
-                        showEditPlayer = false
-                    },
-                    trailing: Button("Save") {
-                        updatePlayer()
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Cancel") {
+                            showEditPlayer = false
+                        }
                     }
-                    .disabled(editPlayerNumber.isEmpty)
-                )
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Save") {
+                            updatePlayer()
+                        }
+                        .disabled(editPlayerNumber.isEmpty)
+                    }
+                }
             }
         }
     }

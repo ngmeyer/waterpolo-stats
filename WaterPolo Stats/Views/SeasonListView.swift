@@ -14,7 +14,7 @@ struct SeasonListView: View {
     @State private var showAddSeason = false
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             List {
                 ForEach(seasons) { season in
                     NavigationLink(destination: SeasonDetailView(season: season)) {
@@ -108,13 +108,13 @@ struct SeasonDetailView: View {
 // MARK: - Add Season View
 
 struct AddSeasonView: View {
-    @Environment(\.presentationMode) var presentationMode
+    @Environment(\.dismiss) private var dismiss
     @Environment(\.managedObjectContext) private var viewContext
     
     @State private var year = Calendar.current.component(.year, from: Date())
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             Form {
                 Section(header: Text("Season Year"),
                         footer: Text("Water polo season runs Aug 1 - Jul 31. Select the year the season starts.")) {
@@ -138,14 +138,18 @@ struct AddSeasonView: View {
                         season.isActive = true
                         
                         try? viewContext.save()
-                        presentationMode.wrappedValue.dismiss()
+                        dismiss()
                     }
                 }
             }
             .navigationTitle("New Season")
-            .navigationBarItems(leading: Button("Cancel") {
-                presentationMode.wrappedValue.dismiss()
-            })
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+            }
         }
     }
 }

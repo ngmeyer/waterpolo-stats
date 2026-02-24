@@ -1,12 +1,12 @@
 import SwiftUI
 
 struct SettingsViewStandalone: View {
-    @Environment(\.presentationMode) var presentationMode
+    @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var viewModel: GameViewModel
     @Binding var isSunlightMode: Bool
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             Form {
                 Section(header: Text("Display")) {
                     Toggle(isSunlightMode ? "Day Mode (Sunlight)" : "Night Mode (Indoor)", isOn: $isSunlightMode)
@@ -68,9 +68,13 @@ struct SettingsViewStandalone: View {
                 }
             }
             .navigationTitle("Settings")
-            .navigationBarItems(trailing: Button("Done") {
-                presentationMode.wrappedValue.dismiss()
-            })
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
+            }
         }
     }
 }

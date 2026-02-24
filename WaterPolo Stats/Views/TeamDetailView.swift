@@ -461,13 +461,16 @@ struct AddPlayerSheet: View {
     let team: Team
     @Environment(\.dismiss) private var dismiss
     @Environment(\.managedObjectContext) private var viewContext
-    
+
     @State private var name = ""
     @State private var number = ""
     @State private var dateOfBirth: Date?
     @State private var showDatePicker = false
     @State private var nscaId = ""
-    
+    @State private var savedCount = 0
+
+    private var canSave: Bool { !name.isEmpty && !number.isEmpty }
+
     var body: some View {
         NavigationStack {
             Form {
@@ -490,25 +493,43 @@ struct AddPlayerSheet: View {
 
                     TextField("NCSA ID (optional)", text: $nscaId)
                 }
+
+                Section {
+                    Button {
+                        saveAndAddAnother()
+                    } label: {
+                        Label("Save & Add Another", systemImage: "person.badge.plus")
+                    }
+                    .disabled(!canSave)
+                }
             }
-            .navigationTitle("Add Player")
+            .navigationTitle(savedCount == 0 ? "Add Player" : "Add Player (\(savedCount) saved)")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
-                        dismiss()
-                    }
+                    Button("Cancel") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
                         savePlayer()
+                        dismiss()
                     }
-                    .disabled(name.isEmpty || number.isEmpty)
+                    .disabled(!canSave)
                 }
             }
         }
     }
 
-    private func savePlayer() {
+    private func saveAndAddAnother() {
+        savePlayer()
+        name = ""
+        number = ""
+        dateOfBirth = nil
+        showDatePicker = false
+        nscaId = ""
+    }
+
+    @discardableResult
+    private func savePlayer() -> Bool {
         let player = Player(context: viewContext)
         player.id = UUID()
         player.name = name
@@ -520,9 +541,11 @@ struct AddPlayerSheet: View {
 
         do {
             try viewContext.save()
-            dismiss()
+            savedCount += 1
+            return true
         } catch {
             print("Error saving player: \(error)")
+            return false
         }
     }
 }

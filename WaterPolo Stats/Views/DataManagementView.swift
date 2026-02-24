@@ -252,10 +252,10 @@ struct DataStatRow: View {
 // MARK: - Import Data View
 
 struct ImportDataView: View {
-    @Environment(\.presentationMode) var presentationMode
+    @Environment(\.dismiss) private var dismiss
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             VStack(spacing: 20) {
                 Image(systemName: "arrow.down.doc")
                     .font(.system(size: 64))
@@ -281,9 +281,13 @@ struct ImportDataView: View {
             }
             .padding()
             .navigationTitle("Import")
-            .navigationBarItems(trailing: Button("Done") {
-                presentationMode.wrappedValue.dismiss()
-            })
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
+            }
         }
     }
 }
@@ -292,7 +296,7 @@ struct ImportDataView: View {
 
 struct DataManagementView_Previews: PreviewProvider {
     static var previews: some View {
-        NavigationView {
+        NavigationStack {
             DataManagementView()
                 .environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
         }

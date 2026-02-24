@@ -13,7 +13,7 @@ struct TeamListView: View {
     @State private var showError = false
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             List {
                 ForEach(teams) { team in
                     NavigationLink(destination: TeamDetailView(team: team)) {
@@ -128,7 +128,7 @@ enum CollegeGender: String, CaseIterable {
 // MARK: - Add Team View
 
 struct AddTeamView: View {
-    @Environment(\.presentationMode) var presentationMode
+    @Environment(\.dismiss) private var dismiss
     @Environment(\.managedObjectContext) private var viewContext
 
     // Club/School name comes first — it's the primary identifier
@@ -236,15 +236,19 @@ struct AddTeamView: View {
                 }
             }
             .navigationTitle("New Team")
-            .navigationBarItems(
-                leading: Button("Cancel") {
-                    presentationMode.wrappedValue.dismiss()
-                },
-                trailing: Button("Save & Add Roster") {
-                    saveTeam()
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
                 }
-                .disabled(orgName.isEmpty)
-            )
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save & Add Roster") {
+                        saveTeam()
+                    }
+                    .disabled(orgName.isEmpty)
+                }
+            }
             .navigationDestination(isPresented: $navigateToRoster) {
                 if let team = savedTeam { TeamDetailView(team: team) }
             }

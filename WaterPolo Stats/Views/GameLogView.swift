@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct GameLogView: View {
-    @Environment(\.presentationMode) var presentationMode
+    @Environment(\.dismiss) private var dismiss
     let events: [GameEventRecord]
     let homeTeamName: String
     let awayTeamName: String
@@ -12,7 +12,7 @@ struct GameLogView: View {
     @State private var showTimeAdjustment = false
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ZStack {
                 WaterPoloColors.background
                     .ignoresSafeArea()
@@ -57,7 +57,7 @@ struct GameLogView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") {
-                        presentationMode.wrappedValue.dismiss()
+                        dismiss()
                     }
                 }
             }
@@ -259,7 +259,7 @@ struct GameLogEventCard: View {
 // MARK: - Time Adjustment Sheet
 
 struct TimeAdjustmentSheet: View {
-    @Environment(\.presentationMode) var presentationMode
+    @Environment(\.dismiss) private var dismiss
     let event: GameEventRecord
     @Binding var adjustedTime: String
     let onSave: () -> Void
@@ -287,7 +287,7 @@ struct TimeAdjustmentSheet: View {
     }
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ZStack {
                 WaterPoloColors.background
                     .ignoresSafeArea()
